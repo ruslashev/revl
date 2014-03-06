@@ -85,7 +85,7 @@ std::vector<token_t> lex(std::string file)
 			}
 			col++;
 		}
-		error("ERROR: Mismatched bracket at line %d, column %d\n", line, col);
+		error("ERROR: Mismatched brace at line %d, column %d\n", line, col);
 	}
 
 	return tokens;
