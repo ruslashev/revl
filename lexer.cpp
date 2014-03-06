@@ -1,4 +1,5 @@
 #include "lexer.hpp"
+#include "utils.hpp"
 
 bool alpha(char ch)
 {
@@ -25,6 +26,7 @@ std::vector<token_t> lex(std::string file)
 	std::vector<token_t> tokens;
 	int i = 0;
 	char ch = file[i++];
+	int braceBalance = 0;
 
 	while (i < file.length()) {
 		token_t newToken;
@@ -54,8 +56,8 @@ std::vector<token_t> lex(std::string file)
 
 		if (punct(ch)) {
 			switch (ch) {
-				case '(': newToken.kind = TOKEN_OPENING_BRACE; break;
-				case ')': newToken.kind = TOKEN_CLOSING_BRACE; break;
+				case '(': newToken.kind = TOKEN_OPENING_BRACE; braceBalance++; break;
+				case ')': newToken.kind = TOKEN_CLOSING_BRACE; braceBalance--; break;
 				case '=': newToken.kind = TOKEN_EQUALS; break;
 				default: continue;
 			}
@@ -65,6 +67,25 @@ std::vector<token_t> lex(std::string file)
 		}
 
 		ch = file[i++];
+	}
+
+	if (braceBalance != 0) {
+		int line = 0, col = 0;
+		struct pos_pair { int line, col; };
+		std::vector<pos_pair> openingBraces;
+		for (i = 0; i < file.length(); i++) {
+			if (file[i] == '(') {
+				openingBraces.push_back({ line, col });
+			} else if (file[i] == ')') {
+				if (openingBraces.size() != 0)
+					openingBraces.pop_back();
+			} else if (file[i] == '\n') {
+				line++;
+				col = 0;
+			}
+			col++;
+		}
+		error("ERROR: Mismatched bracket at line %d, column %d\n", line, col);
 	}
 
 	return tokens;
