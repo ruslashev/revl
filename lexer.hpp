@@ -4,9 +4,11 @@
 #include <vector>
 #include <string>
 
-enum token_k { TOKEN_OPENING_BRACE, TOKEN_CLOSING_BRACE, TOKEN_WORD, TOKEN_INTEGER };
+enum token_k { TOKEN_WORD, TOKEN_INTEGER,
+	TOKEN_OPENING_BRACE, TOKEN_CLOSING_BRACE, TOKEN_EQUALS };
 struct token_t {
 	token_k kind;
+
 	std::string word;
 	int integer;
 };
