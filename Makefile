@@ -4,7 +4,7 @@ EXECNAME = revl
 default: $(EXECNAME)
 	./$(EXECNAME)
 
-$(EXECNAME): .objs/main.o .objs/lexer.o
+$(EXECNAME): .objs/main.o .objs/lexer.o .objs/utils.o .objs/parser.o
 	$(CXX) -o $@ $^
 
 .objs/%.o: %.cpp

@@ -1,5 +1,6 @@
 #include <fstream>
 #include "lexer.hpp"
+#include "parser.hpp"
 #include "utils.hpp"
 
 int main()
@@ -8,6 +9,7 @@ int main()
 
 	std::vector<token_t> tokens;
 	tokens = lex(fileContents);
+
 	for (auto &t : tokens) {
 		switch (t.kind) {
 			case TOKEN_WORD:
@@ -27,6 +29,9 @@ int main()
 				break;
 		}
 	}
+
+	node root = parse(tokens);
+	root.print(0);
 
 	return 0;
 }
