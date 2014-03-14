@@ -8,29 +8,15 @@
  * integer = digit except zero, { digit } ;
  * name = word, { word } ;
  *
- * definition = name, '=', integer;
+ * expression = integer;
+ * definition = argumentless definition | function definition;
+ * argumentless definition = name, '=', expression;
+ * function definition     = name, '(', name, { ',', name }, ')', '=', expression;
  * program = { definition };
  */
 
-void node::print(int indent)
-{
-	for (int i = 0; i < indent; i++)
-		printf("\t");
-	printf("Node ");
-	if (kind == NODE_DEFINITION)
-		printf("NODE_DEFINITION \"%s\"", defName.c_str());
-	else if (kind == NODE_CONSTANT)
-		printf("NODE_CONSTANT %d", constValue);
-	else if (kind == NODE_ROOT)
-		printf("NODE_ROOT");
-	printf(" --> (\n");
-	for (node *n : next) {
-		n->print(indent+1);
-	}
-	for (int i = 0; i < indent; i++)
-		printf("\t");
-	printf(")\n");
-}
+token_t *CurrentToken = NULL;
+std::vector<token_t> tokens;
 
 node *createNode(node_k nkind)
 {
@@ -38,9 +24,6 @@ node *createNode(node_k nkind)
 	newNode->kind = nkind;
 	return newNode;
 }
-
-token_t *CurrentToken = NULL;
-std::vector<token_t> tokens;
 
 void nextToken()
 {
@@ -50,24 +33,59 @@ void nextToken()
 		CurrentToken = NULL;
 }
 
+node* parseExpression()
+{
+	node *exprNode = NULL;
+	if (CurrentToken->kind == TOKEN_INTEGER) {
+		exprNode = createNode(NODE_CONSTANT);
+		exprNode->constValue = CurrentToken->integer;
+		nextToken();
+	} else
+		puts("whoa dude chill");
+
+	return exprNode;
+}
+
 node* parseDefinition()
 {
 	const std::string definedName = CurrentToken->word;
-	node *definitionNode = createNode(NODE_DEFINITION);
-	definitionNode->defName = definedName;
+	node *definitionNode = NULL;
 	nextToken();
 
-	if (CurrentToken->kind != TOKEN_EQUALS)
-		error("expected '=' in function definition for \"%s\"", definedName.c_str());
-	nextToken();
-
-	if (CurrentToken->kind == TOKEN_INTEGER) {
-		node *constNode = createNode(NODE_CONSTANT);
-		constNode->constValue = CurrentToken->integer;
-		definitionNode->next.push_back(constNode);
-		nextToken();
-	} else
-		puts("whoa dude");
+	switch (CurrentToken->kind) {
+		case TOKEN_EQUALS:
+			definitionNode = createNode(NODE_DEFINITION_ARGUMENTLESS);
+			definitionNode->defName = definedName;
+			nextToken();
+			definitionNode->next.push_back(parseExpression());
+			break;
+		case TOKEN_OPENING_BRACE:
+			definitionNode = createNode(NODE_DEFINITION);
+			definitionNode->defName = definedName;
+			nextToken();
+			while (1) {
+				if (CurrentToken->kind != TOKEN_WORD)
+					error("Error: expected variable in function definition for \"%s\"",
+						definedName.c_str());
+				definitionNode->definitionArgList.push_back(CurrentToken->word);
+				nextToken();
+				if (CurrentToken->kind == TOKEN_CLOSING_BRACE)
+					break;
+				if (CurrentToken->kind != TOKEN_COMMA)
+					error("Error: variables in function definition must be separated "
+							"by commas.");
+				nextToken();
+			}
+			nextToken();
+			if (CurrentToken->kind != TOKEN_EQUALS)
+				error("Error: expected '=' in function definition for \"%s\"",
+						definedName.c_str());
+			nextToken();
+			definitionNode->next.push_back(parseExpression());
+			break;
+		default:
+			error("Error: expected a sane definiton");
+	}
 
 	return definitionNode;
 }
@@ -88,5 +106,31 @@ node parse(std::vector<token_t> ntokens)
 		}
 	}
 	return root;
+}
+
+void node::print(int indent)
+{
+	for (int i = 0; i < indent; i++)
+		printf("\t");
+	printf("Node ");
+	if (kind == NODE_DEFINITION) {
+		printf("NODE_DEFINITION \"%s\" (", defName.c_str());
+		for (int i = 0; i < definitionArgList.size()-1; i++)
+			printf("\"%s\", ", definitionArgList[i].c_str());
+		printf("\"%s\") ", definitionArgList.back().c_str());
+	}
+	if (kind == NODE_DEFINITION_ARGUMENTLESS)
+		printf("NODE_DEFINITION_ARGUMENTLESS \"%s\"", defName.c_str());
+	else if (kind == NODE_CONSTANT)
+		printf("NODE_CONSTANT %d", constValue);
+	else if (kind == NODE_ROOT)
+		printf("NODE_ROOT");
+	printf(" --> (\n");
+	for (node *n : next) {
+		n->print(indent+1);
+	}
+	for (int i = 0; i < indent; i++)
+		printf("\t");
+	printf(")\n");
 }
 

@@ -10,6 +10,8 @@ int main()
 	std::vector<token_t> tokens;
 	tokens = lex(fileContents);
 
+	puts("\nFinished lexing ..\n");
+
 	for (auto &t : tokens) {
 		switch (t.kind) {
 			case TOKEN_WORD:
@@ -24,6 +26,9 @@ int main()
 			case TOKEN_CLOSING_BRACE:
 				printf("CLOSING_BRACE\n");
 				break;
+			case TOKEN_COMMA:
+				printf("COMMA\n");
+				break;
 			case TOKEN_EQUALS:
 				printf("EQUALS\n");
 				break;
@@ -31,6 +36,7 @@ int main()
 	}
 
 	node root = parse(tokens);
+	puts("\nFinished parsing ..\n");
 	root.print(0);
 
 	return 0;

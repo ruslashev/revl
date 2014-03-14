@@ -5,7 +5,7 @@
 #include <vector>
 
 enum node_k {
-	NODE_DEFINITION, NODE_CONSTANT, NODE_ROOT
+	NODE_DEFINITION_ARGUMENTLESS, NODE_DEFINITION, NODE_CONSTANT, NODE_ROOT
 };
 struct node {
 	node_k kind;
@@ -13,6 +13,7 @@ struct node {
 
 	std::string defName;
 	int constValue;
+	std::vector<std::string> definitionArgList;
 
 	void print(int indent);
 };
