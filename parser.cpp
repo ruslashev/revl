@@ -35,14 +35,15 @@ void nextToken()
 
 node* parseExpression()
 {
-	node *exprNode = NULL;
+	node *exprNode = createNode(NODE_EXPERESSION);
 	if (CurrentToken->kind == TOKEN_INTEGER) {
-		exprNode = createNode(NODE_CONSTANT);
-		exprNode->constValue = CurrentToken->integer;
-		nextToken();
+		node *constNode = createNode(NODE_CONSTANT);
+		constNode->constValue = CurrentToken->integer;
+		exprNode->next.push_back(constNode);
 	} else
 		puts("whoa dude chill");
 
+	nextToken();
 	return exprNode;
 }
 
@@ -125,12 +126,18 @@ void node::print(int indent)
 		printf("NODE_CONSTANT %d", constValue);
 	else if (kind == NODE_ROOT)
 		printf("NODE_ROOT");
-	printf(" --> (\n");
-	for (node *n : next) {
-		n->print(indent+1);
+	else if (kind == NODE_EXPERESSION)
+		printf("NODE_EXPERESSION");
+	if (next.size() == 0) {
+		printf("\n");
+	} else {
+		printf(" --> (\n");
+		for (node *n : next) {
+			n->print(indent+1);
+		}
+		for (int i = 0; i < indent; i++)
+			printf("\t");
+		printf(")\n");
 	}
-	for (int i = 0; i < indent; i++)
-		printf("\t");
-	printf(")\n");
 }
 
