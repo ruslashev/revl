@@ -18,7 +18,7 @@ struct node {
 	void print(int indent);
 };
 
-node parse(std::vector<token_t> tokens);
+node parse(std::vector<token> tokens);
 
 #endif
 

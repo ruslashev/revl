@@ -7,7 +7,7 @@ int main()
 {
 	std::string fileContents = readFile("test.revl");
 
-	std::vector<token_t> tokens;
+	std::vector<token> tokens;
 	tokens = lex(fileContents);
 
 	puts("\nFinished lexing ..\n");

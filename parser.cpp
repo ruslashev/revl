@@ -15,8 +15,8 @@
  * program = { definition };
  */
 
-token_t *CurrentToken = NULL;
-std::vector<token_t> tokens;
+token *CurrentToken = NULL;
+std::vector<token> tokens;
 
 node *createNode(node_k nkind)
 {
@@ -90,7 +90,7 @@ node* parseDefinition()
 	return definitionNode;
 }
 
-node parse(std::vector<token_t> ntokens)
+node parse(std::vector<token> ntokens)
 {
 	tokens = ntokens;
 	node root;

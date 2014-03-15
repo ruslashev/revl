@@ -21,15 +21,15 @@ bool punct(char ch)
 		ch == ',';
 }
 
-std::vector<token_t> lex(std::string file)
+std::vector<token> lex(std::string file)
 {
-	std::vector<token_t> tokens;
+	std::vector<token> tokens;
 	int i = 0;
 	char ch = file[i++];
 	int parensBalance = 0;
 
 	while (i < file.length()) {
-		token_t newToken;
+		token newToken;
 		if (alpha(ch)) {
 			std::string buf = "";
 			while (alpha(ch)) {

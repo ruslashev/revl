@@ -9,14 +9,14 @@ enum token_k {
 	TOKEN_OPENING_PAREN, TOKEN_CLOSING_PAREN, TOKEN_EQUALS,
 	TOKEN_COMMA
 };
-struct token_t {
+struct token {
 	token_k kind;
 
 	std::string word;
 	int integer;
 };
 
-std::vector<token_t> lex(std::string file);
+std::vector<token> lex(std::string file);
 
 #endif
 
