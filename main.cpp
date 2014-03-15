@@ -20,11 +20,11 @@ int main()
 			case TOKEN_INTEGER:
 				printf("INTEGER: %d\n", t.integer);
 				break;
-			case TOKEN_OPENING_BRACE:
-				printf("OPENING_BRACE\n");
+			case TOKEN_OPENING_PAREN:
+				printf("OPENING_PAREN\n");
 				break;
-			case TOKEN_CLOSING_BRACE:
-				printf("CLOSING_BRACE\n");
+			case TOKEN_CLOSING_PAREN:
+				printf("CLOSING_PAREN\n");
 				break;
 			case TOKEN_COMMA:
 				printf("COMMA\n");

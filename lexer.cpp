@@ -56,8 +56,8 @@ std::vector<token_t> lex(std::string file)
 
 		if (punct(ch)) {
 			switch (ch) {
-				case '(': newToken.kind = TOKEN_OPENING_BRACE; parensBalance++; break;
-				case ')': newToken.kind = TOKEN_CLOSING_BRACE; parensBalance--; break;
+				case '(': newToken.kind = TOKEN_OPENING_PAREN; parensBalance++; break;
+				case ')': newToken.kind = TOKEN_CLOSING_PAREN; parensBalance--; break;
 				case ',': newToken.kind = TOKEN_COMMA; break;
 				case '=': newToken.kind = TOKEN_EQUALS; break;
 				default: continue;
@@ -73,20 +73,20 @@ std::vector<token_t> lex(std::string file)
 	if (parensBalance != 0) {
 		int line = 0, col = 0;
 		struct pos_pair { int line, col; };
-		std::vector<pos_pair> openingBraces;
+		std::vector<pos_pair> openingParens;
 		for (i = 0; i < file.length(); i++) {
 			if (file[i] == '(') {
-				openingBraces.push_back({ line, col });
+				openingParens.push_back({ line, col });
 			} else if (file[i] == ')') {
-				if (openingBraces.size() != 0)
-					openingBraces.pop_back();
+				if (openingParens.size() != 0)
+					openingParens.pop_back();
 			} else if (file[i] == '\n') {
 				line++;
 				col = 0;
 			}
 			col++;
 		}
-		error("ERROR: Mismatched brace at line %d, column %d\n", line, col);
+		error("ERROR: Mismatched parenthesis at line %d, column %d\n", line, col);
 	}
 
 	return tokens;

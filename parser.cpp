@@ -59,7 +59,7 @@ node* parseDefinition()
 			nextToken();
 			definitionNode->next.push_back(parseExpression());
 			break;
-		case TOKEN_OPENING_BRACE:
+		case TOKEN_OPENING_PAREN:
 			definitionNode = createNode(NODE_DEFINITION);
 			definitionNode->defName = definedName;
 			nextToken();
@@ -69,7 +69,7 @@ node* parseDefinition()
 						definedName.c_str());
 				definitionNode->definitionArgList.push_back(CurrentToken->word);
 				nextToken();
-				if (CurrentToken->kind == TOKEN_CLOSING_BRACE)
+				if (CurrentToken->kind == TOKEN_CLOSING_PAREN)
 					break;
 				if (CurrentToken->kind != TOKEN_COMMA)
 					error("Error: variables in function definition must be separated "
