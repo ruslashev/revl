@@ -71,14 +71,17 @@ std::vector<token_t> lex(std::string file)
 	}
 
 	if (parensBalance != 0) {
-		int line = 0, col = 0;
+		int line = 1, col = 1;
 		struct pos_pair { int line, col; };
 		std::vector<pos_pair> openingParens;
 		for (i = 0; i < file.length(); i++) {
 			if (file[i] == '(') {
 				openingParens.push_back({ line, col });
 			} else if (file[i] == ')') {
-				if (openingParens.size() != 0)
+				if (openingParens.size() == 0)
+					error("ERROR: Mismatched closing parenthesis at line %d, column %d",
+							line, col);
+				else
 					openingParens.pop_back();
 			} else if (file[i] == '\n') {
 				line++;
@@ -86,7 +89,8 @@ std::vector<token_t> lex(std::string file)
 			}
 			col++;
 		}
-		error("ERROR: Mismatched parenthesis at line %d, column %d\n", line, col);
+		error("ERROR: Mismatched opening parenthesis at line %d, column %d",
+				openingParens.front().line, openingParens.front().col);
 	}
 
 	return tokens;
