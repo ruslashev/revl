@@ -6,13 +6,14 @@
 
 enum node_k {
 	NODE_ROOT, NODE_EXPERESSION,
-	NODE_DEFINITION_ARGUMENTLESS, NODE_DEFINITION, NODE_CONSTANT
+	NODE_DEFINITION_ARGUMENTLESS, NODE_DEFINITION, NODE_CONSTANT,
+	NODE_VARIABLE_FETCH
 };
 struct node {
 	node_k kind;
 	std::vector<node*> next;
 
-	std::string defName;
+	std::string definitonName;
 	int constValue;
 	std::vector<std::string> definitionArgList;
 

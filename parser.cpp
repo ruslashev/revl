@@ -9,9 +9,11 @@
  * name = word, { word } ;
  *
  * expression = integer;
- * definition = argumentless definition | function definition;
+ *
  * argumentless definition = name, '=', expression;
  * function definition     = name, '(', name, { ',', name }, ')', '=', expression;
+ *
+ * definition = argumentless definition | function definition;
  * program = { definition };
  */
 
@@ -40,6 +42,10 @@ node* parseExpression()
 		node *constNode = createNode(NODE_CONSTANT);
 		constNode->constValue = CurrentToken->integer;
 		exprNode->next.push_back(constNode);
+	} else if (CurrentToken->kind == TOKEN_WORD) {
+		node *varFetch = createNode(NODE_VARIABLE_FETCH);
+		varFetch->definitonName = CurrentToken->word;
+		exprNode->next.push_back(varFetch);
 	} else
 		puts("whoa dude chill");
 
@@ -56,13 +62,13 @@ node* parseDefinition()
 	switch (CurrentToken->kind) {
 		case TOKEN_EQUALS:
 			definitionNode = createNode(NODE_DEFINITION_ARGUMENTLESS);
-			definitionNode->defName = definedName;
+			definitionNode->definitonName = definedName;
 			nextToken();
 			definitionNode->next.push_back(parseExpression());
 			break;
 		case TOKEN_OPENING_PAREN:
 			definitionNode = createNode(NODE_DEFINITION);
-			definitionNode->defName = definedName;
+			definitionNode->definitonName = definedName;
 			nextToken();
 			while (1) {
 				if (CurrentToken->kind != TOKEN_WORD)
@@ -114,20 +120,23 @@ void node::print(int indent)
 	for (int i = 0; i < indent; i++)
 		printf("\t");
 	printf("Node ");
+
 	if (kind == NODE_DEFINITION) {
-		printf("NODE_DEFINITION \"%s\" (", defName.c_str());
+		printf("NODE_DEFINITION \"%s\" (", definitonName.c_str());
 		for (int i = 0; i < definitionArgList.size()-1; i++)
 			printf("\"%s\", ", definitionArgList[i].c_str());
 		printf("\"%s\") ", definitionArgList.back().c_str());
-	}
-	if (kind == NODE_DEFINITION_ARGUMENTLESS)
-		printf("NODE_DEFINITION_ARGUMENTLESS \"%s\"", defName.c_str());
+	} else if (kind == NODE_DEFINITION_ARGUMENTLESS)
+		printf("NODE_DEFINITION_ARGUMENTLESS \"%s\"", definitonName.c_str());
 	else if (kind == NODE_CONSTANT)
 		printf("NODE_CONSTANT %d", constValue);
 	else if (kind == NODE_ROOT)
 		printf("NODE_ROOT");
 	else if (kind == NODE_EXPERESSION)
 		printf("NODE_EXPERESSION");
+	else if (kind == NODE_VARIABLE_FETCH)
+		printf("NODE_VARIABLE_FETCH \"%s\"", definitonName.c_str());
+
 	if (next.size() == 0) {
 		printf("\n");
 	} else {
