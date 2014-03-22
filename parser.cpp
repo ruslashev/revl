@@ -2,18 +2,21 @@
 #include "utils.hpp"
 
 /* // Does not account whitespace
+ * TODO: rewrite with optional symbols ([])
  *
  * word  = 'A' .. 'Z' | 'a' .. 'z' ;
  * punct = '(' | ')' | '[' | ']' | '=' | '.' | ',' ;
  * integer = digit except zero, { digit } ;
  * name = word, { word } ;
  *
- * expression = integer;
+ * function call = name, '(', expression, { ',', expression }, ')'
+ * expression = integer | function call;
  *
  * argumentless definition = name, '=', expression;
  * function definition     = name, '(', name, { ',', name }, ')', '=', expression;
  *
  * definition = argumentless definition | function definition;
+ *
  * program = { definition };
  */
 
@@ -35,19 +38,49 @@ void nextToken()
 		CurrentToken = NULL;
 }
 
+bool CurrentTokenIs(token_k tokenKind)
+{
+	if (CurrentToken != NULL)
+		return CurrentToken->kind == tokenKind;
+	else
+		return false;
+}
+
 node* parseExpression()
 {
 	node *exprNode = createNode(NODE_EXPERESSION);
-	if (CurrentToken->kind == TOKEN_INTEGER) {
+
+	if (CurrentTokenIs(TOKEN_INTEGER)) {
 		node *constNode = createNode(NODE_CONSTANT);
 		constNode->constValue = CurrentToken->integer;
 		exprNode->next.push_back(constNode);
-	} else if (CurrentToken->kind == TOKEN_WORD) {
-		node *varFetch = createNode(NODE_VARIABLE_FETCH);
-		varFetch->definitonName = CurrentToken->word;
-		exprNode->next.push_back(varFetch);
+	} else if (CurrentTokenIs(TOKEN_WORD)) {
+		std::string definedName = CurrentToken->word;
+		nextToken();
+		if (CurrentTokenIs(TOKEN_OPENING_PAREN)) {
+			node *funcCall = createNode(NODE_FUNCTION_CALL);
+			funcCall->definitonName = definedName;
+			nextToken();
+			while (!CurrentTokenIs(TOKEN_CLOSING_PAREN)) {
+				funcCall->next.push_back(parseExpression());
+				if (CurrentTokenIs(TOKEN_COMMA)) {
+					nextToken();
+					continue;
+				} else if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+					break;
+				else
+					error("Failed to parse arguments for call of function \"%s\"",
+							definedName.c_str());
+			}
+			exprNode->next.push_back(funcCall);
+		} else {
+			node *varFetch = createNode(NODE_VARIABLE_FETCH);
+			varFetch->definitonName = definedName;
+			exprNode->next.push_back(varFetch);
+		}
 	} else
-		puts("whoa dude chill");
+		puts("woah dude chill");
+		// error("Error: unknown expression: %d", CurrentToken->kind);
 
 	nextToken();
 	return exprNode;
@@ -57,6 +90,7 @@ node* parseDefinition()
 {
 	const std::string definedName = CurrentToken->word;
 	node *definitionNode = NULL;
+
 	nextToken();
 
 	switch (CurrentToken->kind) {
@@ -71,12 +105,12 @@ node* parseDefinition()
 			definitionNode->definitonName = definedName;
 			nextToken();
 			while (1) {
-				if (CurrentToken->kind != TOKEN_WORD)
+				if (!CurrentTokenIs(TOKEN_WORD))
 					error("Error: expected variable in function definition for \"%s\"",
-						definedName.c_str());
+							definedName.c_str());
 				definitionNode->definitionArgList.push_back(CurrentToken->word);
 				nextToken();
-				if (CurrentToken->kind == TOKEN_CLOSING_PAREN)
+				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
 					break;
 				if (CurrentToken->kind != TOKEN_COMMA)
 					error("Error: variables in function definition must be separated "
@@ -84,7 +118,7 @@ node* parseDefinition()
 				nextToken();
 			}
 			nextToken();
-			if (CurrentToken->kind != TOKEN_EQUALS)
+			if (!CurrentTokenIs(TOKEN_EQUALS))
 				error("Error: expected '=' in function definition for \"%s\"",
 						definedName.c_str());
 			nextToken();
@@ -136,6 +170,8 @@ void node::print(int indent)
 		printf("NODE_EXPERESSION");
 	else if (kind == NODE_VARIABLE_FETCH)
 		printf("NODE_VARIABLE_FETCH \"%s\"", definitonName.c_str());
+	else if (kind == NODE_FUNCTION_CALL)
+		printf("NODE_FUNCTION_CALL \"%s\"", definitonName.c_str());
 
 	if (next.size() == 0) {
 		printf("\n");
