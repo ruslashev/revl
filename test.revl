@@ -4,5 +4,7 @@ f(x) = 2
 
 func(x, y) = plus(3, 4)
 
-main = 5
+g() = 5
+
+main = 6
 

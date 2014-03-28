@@ -32,6 +32,9 @@ int main()
 			case TOKEN_EQUALS:
 				printf("EQUALS\n");
 				break;
+			case TOKEN_EOF:
+				printf("EOF\n");
+				break;
 		}
 	}
 

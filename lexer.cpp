@@ -14,10 +14,7 @@ bool punct(char ch)
 {
 	return ch == '(' ||
 		ch == ')' ||
-		ch == '[' ||
-		ch == ']' ||
 		ch == '=' ||
-		ch == '.' ||
 		ch == ',';
 }
 
@@ -69,6 +66,7 @@ std::vector<token> lex(std::string file)
 
 		ch = file[i++];
 	}
+	tokens.push_back(token { TOKEN_EOF });
 
 	if (parensBalance != 0) {
 		int line = 1, col = 1;

@@ -40,9 +40,10 @@ void nextToken()
 
 bool CurrentTokenIs(token_k tokenKind)
 {
-	if (CurrentToken != NULL)
-		return CurrentToken->kind == tokenKind;
-	else
+	if (CurrentToken != NULL) {
+		if (CurrentToken->kind != TOKEN_EOF)
+			return (CurrentToken->kind == tokenKind);
+	} else
 		return false;
 }
 
@@ -50,10 +51,13 @@ node* parseExpression()
 {
 	node *exprNode = createNode(NODE_EXPERESSION);
 
+	printf("Expression: %d\n", CurrentToken->kind);
+
 	if (CurrentTokenIs(TOKEN_INTEGER)) {
 		node *constNode = createNode(NODE_CONSTANT);
 		constNode->constValue = CurrentToken->integer;
 		exprNode->next.push_back(constNode);
+		nextToken();
 	} else if (CurrentTokenIs(TOKEN_WORD)) {
 		std::string definedName = CurrentToken->word;
 		nextToken();
@@ -61,16 +65,16 @@ node* parseExpression()
 			node *funcCall = createNode(NODE_FUNCTION_CALL);
 			funcCall->definitonName = definedName;
 			nextToken();
-			while (!CurrentTokenIs(TOKEN_CLOSING_PAREN)) {
+			if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+				puts("extra parens");
+			else while (1) {
 				funcCall->next.push_back(parseExpression());
-				if (CurrentTokenIs(TOKEN_COMMA)) {
-					nextToken();
-					continue;
-				} else if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
 					break;
-				else
+				if (!CurrentTokenIs(TOKEN_COMMA))
 					error("Failed to parse arguments for call of function \"%s\"",
 							definedName.c_str());
+				nextToken();
 			}
 			exprNode->next.push_back(funcCall);
 		} else {
@@ -79,10 +83,8 @@ node* parseExpression()
 			exprNode->next.push_back(varFetch);
 		}
 	} else
-		puts("woah dude chill");
-		// error("Error: unknown expression: %d", CurrentToken->kind);
+		error("Error: unknown expression: %d", CurrentToken->kind);
 
-	nextToken();
 	return exprNode;
 }
 
@@ -104,15 +106,17 @@ node* parseDefinition()
 			definitionNode = createNode(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
 			nextToken();
-			while (1) {
+			if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+				break;
+			else while (1) {
 				if (!CurrentTokenIs(TOKEN_WORD))
-					error("Error: expected variable in function definition for \"%s\"",
+					error("Error: expected variable in definition for function \"%s\"",
 							definedName.c_str());
 				definitionNode->definitionArgList.push_back(CurrentToken->word);
 				nextToken();
 				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
 					break;
-				if (CurrentToken->kind != TOKEN_COMMA)
+				if (!CurrentTokenIs(TOKEN_COMMA))
 					error("Error: variables in function definition must be separated "
 							"by commas.");
 				nextToken();
