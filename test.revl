@@ -1,8 +1,8 @@
 a = 1
 
-f(x) = 2
+f(x) = id()
 
-func(x, y) = plus(3, 4)
+func(x, y) = plus(2, mult(3, 4))
 
 g() = 5
 

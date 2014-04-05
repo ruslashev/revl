@@ -94,3 +94,30 @@ std::vector<token> lex(std::string file)
 	return tokens;
 }
 
+void token::print()
+{
+	switch (kind) {
+		case TOKEN_WORD:
+			printf("WORD: %s\n", word.c_str());
+			break;
+		case TOKEN_INTEGER:
+			printf("INTEGER: %d\n", integer);
+			break;
+		case TOKEN_OPENING_PAREN:
+			printf("OPENING_PAREN\n");
+			break;
+		case TOKEN_CLOSING_PAREN:
+			printf("CLOSING_PAREN\n");
+			break;
+		case TOKEN_COMMA:
+			printf("COMMA\n");
+			break;
+		case TOKEN_EQUALS:
+			printf("EQUALS\n");
+			break;
+		case TOKEN_EOF:
+			printf("EOF\n");
+			break;
+	}
+}
+

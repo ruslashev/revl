@@ -32,6 +32,7 @@ node *createNode(node_k nkind)
 
 void nextToken()
 {
+	// TODO: handle this with EOF
 	if (CurrentToken != &tokens.back())
 		CurrentToken++;
 	else
@@ -41,8 +42,7 @@ void nextToken()
 bool CurrentTokenIs(token_k tokenKind)
 {
 	if (CurrentToken != NULL) {
-		if (CurrentToken->kind != TOKEN_EOF)
-			return (CurrentToken->kind == tokenKind);
+		return (CurrentToken->kind == tokenKind);
 	} else
 		return false;
 }
@@ -51,23 +51,23 @@ node* parseExpression()
 {
 	node *exprNode = createNode(NODE_EXPERESSION);
 
-	printf("Expression: %d\n", CurrentToken->kind);
+	printf("Expression: ");
+	CurrentToken->print();
 
 	if (CurrentTokenIs(TOKEN_INTEGER)) {
 		node *constNode = createNode(NODE_CONSTANT);
 		constNode->constValue = CurrentToken->integer;
 		exprNode->next.push_back(constNode);
-		nextToken();
 	} else if (CurrentTokenIs(TOKEN_WORD)) {
-		std::string definedName = CurrentToken->word;
+		const std::string definedName = CurrentToken->word;
 		nextToken();
 		if (CurrentTokenIs(TOKEN_OPENING_PAREN)) {
 			node *funcCall = createNode(NODE_FUNCTION_CALL);
 			funcCall->definitonName = definedName;
 			nextToken();
-			if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
-				puts("extra parens");
-			else while (1) {
+			while (1) {
+				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+					break;
 				funcCall->next.push_back(parseExpression());
 				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
 					break;
@@ -82,9 +82,12 @@ node* parseExpression()
 			varFetch->definitonName = definedName;
 			exprNode->next.push_back(varFetch);
 		}
-	} else
-		error("Error: unknown expression: %d", CurrentToken->kind);
+	} else {
+		printf("Error: unknown expression: ");
+		CurrentToken->print();
+	}
 
+	nextToken();
 	return exprNode;
 }
 
@@ -107,7 +110,7 @@ node* parseDefinition()
 			definitionNode->definitonName = definedName;
 			nextToken();
 			if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
-				break;
+				puts("shit nigga check yo parens");
 			else while (1) {
 				if (!CurrentTokenIs(TOKEN_WORD))
 					error("Error: expected variable in definition for function \"%s\"",
@@ -141,15 +144,18 @@ node parse(std::vector<token> ntokens)
 	node root;
 	root.kind = NODE_ROOT;
 	CurrentToken = &tokens.front();
-	while (CurrentToken != NULL) {
+	while (!CurrentTokenIs(TOKEN_EOF)) {
 		switch (CurrentToken->kind) {
 			case TOKEN_WORD:
 				root.next.push_back(parseDefinition());
 				break;
 			default:
-				break;
+				printf("Error: ");
+				CurrentToken->print();
+				goto end;
 		}
 	}
+end:
 	return root;
 }
 
@@ -161,9 +167,13 @@ void node::print(int indent)
 
 	if (kind == NODE_DEFINITION) {
 		printf("NODE_DEFINITION \"%s\" (", definitonName.c_str());
-		for (int i = 0; i < definitionArgList.size()-1; i++)
-			printf("\"%s\", ", definitionArgList[i].c_str());
-		printf("\"%s\") ", definitionArgList.back().c_str());
+		if (definitionArgList.size() == 0)
+			printf("no variables)");
+		else {
+			for (int i = 0; i < definitionArgList.size()-1; i++)
+				printf("\"%s\", ", definitionArgList[i].c_str());
+			printf("\"%s\") ", definitionArgList.back().c_str());
+		}
 	} else if (kind == NODE_DEFINITION_ARGUMENTLESS)
 		printf("NODE_DEFINITION_ARGUMENTLESS \"%s\"", definitonName.c_str());
 	else if (kind == NODE_CONSTANT)

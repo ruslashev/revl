@@ -14,6 +14,8 @@ struct token {
 
 	std::string word;
 	int integer;
+
+	void print();
 };
 
 std::vector<token> lex(std::string file);
