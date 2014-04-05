@@ -1,21 +1,16 @@
 #include "parser.hpp"
 #include "utils.hpp"
 
-/* // Does not account whitespace
- * TODO: rewrite with optional symbols ([])
- *
- * word  = 'A' .. 'Z' | 'a' .. 'z' ;
+/* word  = 'A' .. 'Z' | 'a' .. 'z' ;
  * punct = '(' | ')' | '[' | ']' | '=' | '.' | ',' ;
  * integer = digit except zero, { digit } ;
  * name = word, { word } ;
+ * constant = integer // for now
  *
- * function call = name, '(', expression, { ',', expression }, ')'
- * expression = integer | function call;
+ * definition call = name, [ '(', [ expression, { ',', expression } ], ')' ]
+ * expression = constant | definition call;
  *
- * argumentless definition = name, '=', expression;
- * function definition     = name, '(', name, { ',', name }, ')', '=', expression;
- *
- * definition = argumentless definition | function definition;
+ * definition = name, [ '(', [ name, { ',', name } ], ')' ], '=', expression;
  *
  * program = { definition };
  */
@@ -23,7 +18,7 @@
 token *CurrentToken = NULL;
 std::vector<token> tokens;
 
-node *createNode(node_k nkind)
+node* createNode(node_k nkind)
 {
 	node *newNode = new node;
 	newNode->kind = nkind;
@@ -62,7 +57,7 @@ node* parseExpression()
 		const std::string definedName = CurrentToken->word;
 		nextToken();
 		if (CurrentTokenIs(TOKEN_OPENING_PAREN)) {
-			node *funcCall = createNode(NODE_FUNCTION_CALL);
+			node *funcCall = createNode(NODE_DEFINITION_CALL);
 			funcCall->definitonName = definedName;
 			nextToken();
 			while (1) {
@@ -78,7 +73,7 @@ node* parseExpression()
 			}
 			exprNode->next.push_back(funcCall);
 		} else {
-			node *varFetch = createNode(NODE_VARIABLE_FETCH);
+			node *varFetch = createNode(NODE_DEFINITION_CALL);
 			varFetch->definitonName = definedName;
 			exprNode->next.push_back(varFetch);
 		}
@@ -100,7 +95,7 @@ node* parseDefinition()
 
 	switch (CurrentToken->kind) {
 		case TOKEN_EQUALS:
-			definitionNode = createNode(NODE_DEFINITION_ARGUMENTLESS);
+			definitionNode = createNode(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
 			nextToken();
 			definitionNode->next.push_back(parseExpression());
@@ -174,18 +169,14 @@ void node::print(int indent)
 				printf("\"%s\", ", definitionArgList[i].c_str());
 			printf("\"%s\") ", definitionArgList.back().c_str());
 		}
-	} else if (kind == NODE_DEFINITION_ARGUMENTLESS)
-		printf("NODE_DEFINITION_ARGUMENTLESS \"%s\"", definitonName.c_str());
-	else if (kind == NODE_CONSTANT)
+	} else if (kind == NODE_CONSTANT)
 		printf("NODE_CONSTANT %d", constValue);
 	else if (kind == NODE_ROOT)
 		printf("NODE_ROOT");
 	else if (kind == NODE_EXPERESSION)
 		printf("NODE_EXPERESSION");
-	else if (kind == NODE_VARIABLE_FETCH)
-		printf("NODE_VARIABLE_FETCH \"%s\"", definitonName.c_str());
-	else if (kind == NODE_FUNCTION_CALL)
-		printf("NODE_FUNCTION_CALL \"%s\"", definitonName.c_str());
+	else if (kind == NODE_DEFINITION_CALL)
+		printf("NODE_DEFINITION_CALL \"%s\"", definitonName.c_str());
 
 	if (next.size() == 0) {
 		printf("\n");
