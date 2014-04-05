@@ -27,27 +27,22 @@ node* createNode(node_k nkind)
 
 void nextToken()
 {
-	// TODO: handle this with EOF
-	if (CurrentToken != &tokens.back())
+	if (CurrentToken->kind != TOKEN_EOF)
 		CurrentToken++;
-	else
-		CurrentToken = NULL;
 }
 
 bool CurrentTokenIs(token_k tokenKind)
 {
-	if (CurrentToken != NULL) {
-		return (CurrentToken->kind == tokenKind);
-	} else
-		return false;
+	// actually this function is not relevant anymore,
+	// and every call to it should be replaced with
+	// normal `if (CurrentToken->kind == ..)` check,
+	// but with it everything looks a bit more pretty
+	return (CurrentToken->kind == tokenKind);
 }
 
 node* parseExpression()
 {
 	node *exprNode = createNode(NODE_EXPERESSION);
-
-	printf("Expression: ");
-	CurrentToken->print();
 
 	if (CurrentTokenIs(TOKEN_INTEGER)) {
 		node *constNode = createNode(NODE_CONSTANT);
@@ -104,9 +99,8 @@ node* parseDefinition()
 			definitionNode = createNode(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
 			nextToken();
-			if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
-				puts("shit nigga check yo parens");
-			else while (1) {
+			if (!CurrentTokenIs(TOKEN_CLOSING_PAREN))
+			while (1) {
 				if (!CurrentTokenIs(TOKEN_WORD))
 					error("Error: expected variable in definition for function \"%s\"",
 							definedName.c_str());
