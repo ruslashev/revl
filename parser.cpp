@@ -154,6 +154,23 @@ void node::print(int indent)
 		printf("\t");
 	printf("Node ");
 
+	printType();
+
+	if (next.size() == 0) {
+		printf("\n");
+	} else {
+		printf(" --> (\n");
+		for (node *n : next) {
+			n->print(indent+1);
+		}
+		for (int i = 0; i < indent; i++)
+			printf("\t");
+		printf(")\n");
+	}
+}
+
+void node::printType()
+{
 	if (kind == NODE_DEFINITION) {
 		printf("NODE_DEFINITION \"%s\" (", definitonName.c_str());
 		if (definitionArgList.size() == 0)
@@ -171,17 +188,5 @@ void node::print(int indent)
 		printf("NODE_EXPERESSION");
 	else if (kind == NODE_DEFINITION_CALL)
 		printf("NODE_DEFINITION_CALL \"%s\"", definitonName.c_str());
-
-	if (next.size() == 0) {
-		printf("\n");
-	} else {
-		printf(" --> (\n");
-		for (node *n : next) {
-			n->print(indent+1);
-		}
-		for (int i = 0; i < indent; i++)
-			printf("\t");
-		printf(")\n");
-	}
 }
 

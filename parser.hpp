@@ -20,6 +20,7 @@ struct node {
 	std::vector<std::string> definitionArgList;
 
 	void print(int indent);
+	void printType();
 };
 
 node parse(std::vector<token> tokens);

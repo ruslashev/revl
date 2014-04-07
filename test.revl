@@ -1,10 +1,2 @@
-a = 1
-
-f(x) = id()
-
-func(x, y) = plus(2, mult(3, 4))
-
-g() = 5
-
-main = 6
+main = plus(1, 2)
 
