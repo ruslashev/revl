@@ -23,7 +23,7 @@ struct node {
 	void printType();
 };
 
-node parse(std::vector<token> tokens);
+node parser_parse(std::vector<token> tokens);
 
 #endif
 

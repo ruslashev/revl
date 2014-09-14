@@ -56,7 +56,7 @@ int evaluateDefinition(node *tree)
 	return evaluateExpression(tree->next[0]);
 }
 
-int evaluate(node tree)
+int evaluator_evaluate(node tree)
 {
 	printf("In ");
 	tree.printType();
@@ -66,7 +66,7 @@ int evaluate(node tree)
 		case NODE_ROOT:
 			result = 0;
 			for (node *child : tree.next)
-				evaluate(*child);
+				evaluator_evaluate(*child);
 			return result;
 			break;
 		case NODE_DEFINITION:

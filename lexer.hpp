@@ -18,7 +18,7 @@ struct token {
 	void print();
 };
 
-std::vector<token> lex(std::string file);
+std::vector<token> lexer_lex(std::string file);
 
 #endif
 

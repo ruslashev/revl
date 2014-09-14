@@ -18,7 +18,7 @@ bool punct(char ch)
 		ch == ',';
 }
 
-std::vector<token> lex(std::string file)
+std::vector<token> lexer_lex(std::string file)
 {
 	std::vector<token> tokens;
 	int i = 0;

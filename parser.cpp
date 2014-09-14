@@ -127,7 +127,7 @@ node* parseDefinition()
 	return definitionNode;
 }
 
-node parse(std::vector<token> ntokens)
+node parser_parse(std::vector<token> ntokens)
 {
 	tokens = ntokens;
 	node root;
