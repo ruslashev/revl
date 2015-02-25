@@ -24,12 +24,15 @@ struct token {
 
 class Lexer
 {
+	std::string file;
+
 	bool _is_alpha(char ch);
 	bool _is_digit(char ch);
 	bool _is_punct(char ch);
 
+	void checkParens(std::vector<token> _tokens);
 public:
-	std::vector<token> Lex(std::string file);
+	std::vector<token> Lex(std::string nfile);
 };
 
 #endif

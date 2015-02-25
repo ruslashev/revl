@@ -49,80 +49,92 @@ bool Lexer::_is_punct(char ch)
 		ch == ',';
 }
 
-std::vector<token> Lexer::Lex(std::string file)
+std::vector<token> Lexer::Lex(std::string nfile)
 {
-	std::vector<token> tokens;
+	file = nfile;
+
+	std::vector<token> _tokens;
 	int i = 0;
 	char ch = file[i++];
-	int parensBalance = 0;
 
 	while (i < file.length()) {
-		token newToken;
-		if (_is_alpha(ch)) { // todo merge
-			std::string buf = "";
-			while (_is_alpha(ch)) {
-				buf += ch;
-				ch = file[i++];
-			}
-			newToken.kind = TOKEN_WORD;
-			newToken.word = buf;
-			tokens.push_back(newToken);
-			continue;
-		} // todo else
+		std::string word_buf = "";
+		std::string integer_buf = "";
 
-		if (_is_digit(ch)) {
-			std::string strBuf = "";
-			while (_is_digit(ch)) {
-				strBuf += ch;
-				ch = file[i++];
-			}
-			newToken.kind = TOKEN_INTEGER;
-			newToken.integer = std::stoi(strBuf);
-			tokens.push_back(newToken);
+		while (_is_alpha(ch)) {
+			word_buf += ch;
+			ch = file[i++];
+		}
+		while (_is_digit(ch)) {
+			integer_buf += ch;
+			ch = file[i++];
+		}
+		if (word_buf != "") {
+			token new_token { TOKEN_WORD };
+			new_token.word = word_buf;
+			_tokens.push_back(new_token);
+			continue;
+		} else if (integer_buf != "") {
+			token new_token { TOKEN_INTEGER };
+			new_token.integer = std::stoi(integer_buf);
+			_tokens.push_back(new_token);
 			continue;
 		}
 
 		if (_is_punct(ch)) {
+			token new_token;
 			switch (ch) {
-				case '(': newToken.kind = TOKEN_OPENING_PAREN; parensBalance++; break;
-				case ')': newToken.kind = TOKEN_CLOSING_PAREN; parensBalance--; break;
-				case ',': newToken.kind = TOKEN_COMMA; break;
-				case '=': newToken.kind = TOKEN_EQUALS; break;
-				default: continue;
+				case '(': new_token.kind = TOKEN_OPENING_PAREN; break;
+				case ')': new_token.kind = TOKEN_CLOSING_PAREN; break;
+				case '=': new_token.kind = TOKEN_EQUALS; break;
+				case ',': new_token.kind = TOKEN_COMMA; break;
 			}
-			ch = file[i++];
-			tokens.push_back(newToken);
-			continue;
+			_tokens.push_back(new_token);
 		}
 
 		ch = file[i++];
 	}
-	tokens.push_back(token { TOKEN_EOF });
 
-	// todo: to another function
-	if (parensBalance != 0) {
-		int line = 1, col = 1;
-		struct pos_pair { int line, col; };
-		std::vector<pos_pair> openingParens;
-		for (i = 0; i < file.length(); i++) {
-			if (file[i] == '(') {
-				openingParens.push_back({ line, col });
-			} else if (file[i] == ')') {
-				if (openingParens.size() == 0)
-					error("ERROR: Mismatched closing parenthesis at line %d, column %d",
-							line, col);
-				else
-					openingParens.pop_back();
-			} else if (file[i] == '\n') {
-				line++;
-				col = 0;
-			}
-			col++;
+	_tokens.push_back(token { TOKEN_EOF });
+
+	checkParens(_tokens);
+
+	return _tokens;
+}
+
+void Lexer::checkParens(std::vector<token> _tokens)
+{
+	int balance = 0;
+
+	for (auto &t : _tokens)
+		if (t.kind == TOKEN_OPENING_PAREN)
+			balance++;
+		else if (t.kind == TOKEN_CLOSING_PAREN)
+			balance--;
+
+	if (balance == 0)
+		return;
+
+	int line = 1, col = 1;
+	struct pos_pair { int line, col; };
+	std::vector<pos_pair> opening_parens;
+	for (auto i = 0; i < file.size(); i++) {
+		if (file[i] == '(')
+			opening_parens.push_back({ line, col });
+		else if (file[i] == ')') {
+			if (opening_parens.size() == 0)
+				error("ERROR: Mismatched closing parenthesis at "
+						"line %d, column %d", line, col);
+			else
+				opening_parens.pop_back();
+		} else if (file[i] == '\n') {
+			line++;
+			col = 0;
 		}
-		error("ERROR: Mismatched opening parenthesis at line %d, column %d",
-				openingParens.front().line, openingParens.front().col);
+		col++;
 	}
-
-	return tokens;
+	error("ERROR: Mismatched opening parenthesis at "
+			"line %d, column %d",
+			opening_parens.front().line, opening_parens.front().col);
 }
 
