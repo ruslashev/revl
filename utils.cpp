@@ -10,11 +10,11 @@ void error(const char *format, ...)
 	exit(1);
 }
 
-std::string readFile(std::string fileName)
+std::string ReadFile(std::string filename)
 {
-	std::ifstream ifs(fileName, std::ifstream::in);
+	std::ifstream ifs(filename, std::ifstream::in);
 	if (!ifs)
-		error("Failed to open file \"%s\": ", fileName.c_str());
+		error("Failed to open file \"%s\": ", filename.c_str());
 	std::string strBuf, out = "";
 	while (getline(ifs, strBuf)) {
 		out += strBuf + '\n';

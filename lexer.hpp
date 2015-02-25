@@ -5,9 +5,13 @@
 #include <string>
 
 enum token_k {
-	TOKEN_WORD, TOKEN_INTEGER,
-	TOKEN_OPENING_PAREN, TOKEN_CLOSING_PAREN, TOKEN_EQUALS,
-	TOKEN_COMMA, TOKEN_EOF
+	TOKEN_WORD,
+	TOKEN_INTEGER,
+	TOKEN_OPENING_PAREN,
+	TOKEN_CLOSING_PAREN,
+	TOKEN_EQUALS,
+	TOKEN_COMMA,
+	TOKEN_EOF
 };
 struct token {
 	token_k kind;
@@ -18,7 +22,15 @@ struct token {
 	void print();
 };
 
-std::vector<token> lexer_lex(std::string file);
+class Lexer
+{
+	bool _is_alpha(char ch);
+	bool _is_digit(char ch);
+	bool _is_punct(char ch);
+
+public:
+	std::vector<token> Lex(std::string file);
+};
 
 #endif
 

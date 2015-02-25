@@ -5,7 +5,7 @@
 #include <cstdarg>
 
 void error(const char *format, ...);
-std::string readFile(std::string fileName);
+std::string ReadFile(std::string filename);
 
 #endif
 

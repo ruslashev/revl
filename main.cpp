@@ -6,26 +6,27 @@
 
 int main()
 {
-	puts("Reading file..\n");
-	std::string fileContents = readFile("test.revl");
+	puts("1. Reading file");
+	std::string fileContents = ReadFile("test.revl");
 	printf("File contents: \"%s\"\n", fileContents.c_str());
-	puts("\nFile read.\n");
+	puts("File read.");
 
-	puts("Lexing..\n");
+	puts("2. Lexing...");
 	std::vector<token> tokens;
-	tokens = lexer_lex(fileContents);
+	Lexer lexer;
+	tokens = lexer.Lex(fileContents);
 	for (auto &t : tokens)
 		t.print();
-	puts("\nFinished lexing..\n");
+	puts("Finished lexing.");
 
-	puts("Parsing..\n");
+	puts("3. Parsing..");
 	node root = parser_parse(tokens);
 	root.print(0);
-	puts("\nFinished parsing..\n");
+	puts("Finished parsing.");
 
-	puts("Evaluating..\n");
+	puts("4. Evaluating...");
 	int result = evaluator_evaluate(root);
-	printf("\nFinished evaluating. Result: %d\n", result);
+	printf("Finished evaluating. Result = %d\n", result);
 
 	return 0;
 }
