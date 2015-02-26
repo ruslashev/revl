@@ -20,8 +20,9 @@ int main()
 	puts("Finished lexing.");
 
 	puts("3. Parsing..");
-	node root = parser_parse(tokens);
-	root.print(0);
+	Parser parser;
+	Node root = parser.Parse(tokens);
+	root.Print(0);
 	puts("Finished parsing.");
 
 	puts("4. Evaluating...");

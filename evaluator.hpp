@@ -3,7 +3,7 @@
 
 #include "parser.hpp"
 
-int evaluator_evaluate(node root);
+int evaluator_evaluate(Node root);
 
 #endif
 

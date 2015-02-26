@@ -11,19 +11,30 @@ enum node_k {
 	NODE_CONSTANT,
 	NODE_DEFINITION_CALL
 };
-struct node {
+
+class Node {
+public:
 	node_k kind;
-	std::vector<node*> next;
-
 	std::string definitonName;
-	int constValue;
 	std::vector<std::string> definitionArgList;
+	int constValue;
+	std::vector<Node*> next;
 
-	void print(int indent);
-	void printType();
+	void Print(int indent);
+	void PrintType();
 };
 
-node parser_parse(std::vector<token> tokens);
+class Parser
+{
+	token *_current;
+
+	void nextToken();
+	Node* parseExpression();
+	Node* parseDefinition();
+public:
+	Parser();
+	Node Parse(std::vector<token> tokens);
+};
 
 #endif
 

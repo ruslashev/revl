@@ -15,80 +15,73 @@
  * program = { definition };
  */
 
-token *CurrentToken = NULL;
-std::vector<token> tokens;
-
-node* createNode(node_k nkind)
+Node* createNode(node_k nkind)
 {
-	node *newNode = new node;
+	Node *newNode = new Node;
 	newNode->kind = nkind;
 	return newNode;
 }
 
-void nextToken()
+Parser::Parser()
 {
-	if (CurrentToken->kind != TOKEN_EOF)
-		CurrentToken++;
+	_current = NULL;
 }
 
-bool CurrentTokenIs(token_k tokenKind)
+void Parser::nextToken()
 {
-	// actually this function is not relevant anymore,
-	// and every call to it should be replaced with
-	// normal `if (CurrentToken->kind == ..)` check,
-	// but with it everything looks a bit more pretty
-	return (CurrentToken->kind == tokenKind);
+	if (_current->kind != TOKEN_EOF)
+		_current++;
 }
 
-node* parseExpression()
+Node* Parser::parseExpression()
 {
-	node *exprNode = createNode(NODE_EXPERESSION);
+	Node *exprNode = createNode(NODE_EXPERESSION);
 
-	if (CurrentTokenIs(TOKEN_INTEGER)) {
-		node *constNode = createNode(NODE_CONSTANT);
-		constNode->constValue = CurrentToken->integer;
+	if (_current->kind == TOKEN_INTEGER) {
+		Node *constNode = createNode(NODE_CONSTANT);
+		constNode->constValue = _current->integer;
 		exprNode->next.push_back(constNode);
-	} else if (CurrentTokenIs(TOKEN_WORD)) {
-		const std::string definedName = CurrentToken->word;
+	} else if (_current->kind == TOKEN_WORD) {
+		const std::string definedName = _current->word;
 		nextToken();
-		if (CurrentTokenIs(TOKEN_OPENING_PAREN)) {
-			node *funcCall = createNode(NODE_DEFINITION_CALL);
+		if (_current->kind == TOKEN_OPENING_PAREN) {
+			Node *funcCall = createNode(NODE_DEFINITION_CALL);
 			funcCall->definitonName = definedName;
 			nextToken();
 			while (1) {
-				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+				if (_current->kind == TOKEN_CLOSING_PAREN)
 					break;
 				funcCall->next.push_back(parseExpression());
-				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+				if (_current->kind == TOKEN_CLOSING_PAREN)
 					break;
-				if (!CurrentTokenIs(TOKEN_COMMA))
+				if (_current->kind != TOKEN_COMMA)
 					error("Failed to parse arguments for call of function \"%s\"",
 							definedName.c_str());
 				nextToken();
 			}
 			exprNode->next.push_back(funcCall);
 		} else {
-			node *varFetch = createNode(NODE_DEFINITION_CALL);
+			Node *varFetch = createNode(NODE_DEFINITION_CALL);
 			varFetch->definitonName = definedName;
 			exprNode->next.push_back(varFetch);
 		}
 	} else {
 		printf("Error: unknown expression: ");
-		CurrentToken->print();
+		_current->print();
 	}
 
 	nextToken();
 	return exprNode;
 }
 
-node* parseDefinition()
+Node* Parser::parseDefinition()
 {
-	const std::string definedName = CurrentToken->word;
-	node *definitionNode = NULL;
+	const std::string definedName = _current->word;
+	Node *definitionNode = NULL;
 
 	nextToken();
 
-	switch (CurrentToken->kind) {
+	switch (_current->kind) {
 		case TOKEN_EQUALS:
 			definitionNode = createNode(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
@@ -99,22 +92,22 @@ node* parseDefinition()
 			definitionNode = createNode(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
 			nextToken();
-			if (!CurrentTokenIs(TOKEN_CLOSING_PAREN))
+			if (_current->kind != TOKEN_CLOSING_PAREN)
 			while (1) {
-				if (!CurrentTokenIs(TOKEN_WORD))
+				if (_current->kind != TOKEN_WORD)
 					error("Error: expected variable in definition for function \"%s\"",
 							definedName.c_str());
-				definitionNode->definitionArgList.push_back(CurrentToken->word);
+				definitionNode->definitionArgList.push_back(_current->word);
 				nextToken();
-				if (CurrentTokenIs(TOKEN_CLOSING_PAREN))
+				if (_current->kind == TOKEN_CLOSING_PAREN)
 					break;
-				if (!CurrentTokenIs(TOKEN_COMMA))
+				if (_current->kind != TOKEN_COMMA)
 					error("Error: variables in function definition must be separated "
 							"by commas.");
 				nextToken();
 			}
 			nextToken();
-			if (!CurrentTokenIs(TOKEN_EQUALS))
+			if (_current->kind != TOKEN_EQUALS)
 				error("Error: expected '=' in function definition for \"%s\"",
 						definedName.c_str());
 			nextToken();
@@ -127,20 +120,20 @@ node* parseDefinition()
 	return definitionNode;
 }
 
-node parser_parse(std::vector<token> ntokens)
+Node Parser::Parse(std::vector<token> ntokens)
 {
-	tokens = ntokens;
-	node root;
+	std::vector<token> tokens = ntokens;
+	Node root;
 	root.kind = NODE_ROOT;
-	CurrentToken = &tokens.front();
-	while (!CurrentTokenIs(TOKEN_EOF)) {
-		switch (CurrentToken->kind) {
+	_current = &tokens.front();
+	while (_current->kind != TOKEN_EOF) {
+		switch (_current->kind) {
 			case TOKEN_WORD:
 				root.next.push_back(parseDefinition());
 				break;
 			default:
 				printf("Error: ");
-				CurrentToken->print();
+				_current->print();
 				goto end;
 		}
 	}
@@ -148,20 +141,20 @@ end:
 	return root;
 }
 
-void node::print(int indent)
+void Node::Print(int indent)
 {
 	for (int i = 0; i < indent; i++)
 		printf("\t");
 	printf("Node ");
 
-	printType();
+	PrintType();
 
 	if (next.size() == 0) {
 		printf("\n");
 	} else {
 		printf(" --> (\n");
-		for (node *n : next) {
-			n->print(indent+1);
+		for (auto &n : next) {
+			n->Print(indent+1);
 		}
 		for (int i = 0; i < indent; i++)
 			printf("\t");
@@ -169,7 +162,7 @@ void node::print(int indent)
 	}
 }
 
-void node::printType()
+void Node::PrintType()
 {
 	if (kind == NODE_DEFINITION) {
 		printf("NODE_DEFINITION \"%s\" (", definitonName.c_str());
