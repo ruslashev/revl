@@ -15,10 +15,13 @@
  * program = { definition };
  */
 
+static std::vector<std::unique_ptr<Node>> allocated_nodes;
+
 Node* createNode(node_k nkind)
 {
 	Node *newNode = new Node;
 	newNode->kind = nkind;
+	allocated_nodes.push_back(std::unique_ptr<Node>(newNode));
 	return newNode;
 }
 

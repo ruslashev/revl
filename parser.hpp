@@ -3,6 +3,7 @@
 
 #include "lexer.hpp"
 #include <vector>
+#include <memory>
 
 enum node_k {
 	NODE_ROOT,
