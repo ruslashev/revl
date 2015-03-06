@@ -1,28 +1,30 @@
 #include "parser.hpp"
 #include "utils.hpp"
 
-/* word  = 'A' .. 'Z' | 'a' .. 'z' ;
- * punct = '(' | ')' | '[' | ']' | '=' | '.' | ',' ;
- * integer = digit except zero, { digit } ;
- * name = word, { word } ;
- * constant = integer // for now
+/* alpha  = 'A' .. 'Z' | 'a' .. 'z' ;
+ * punct = '(' | ')' | '=' | ',' ;
+ * digit = [0-9] ;
  *
- * definition call = name, [ '(', [ expression, { ',', expression } ], ')' ]
+ * integer = digit, { digit };
+ * word = alpha, { alpha } ;
+ * constant = integer
+ *
+ * definition call = word, [ '(', [ expression, { ',', expression } ], ')' ]
  * expression = constant | definition call;
  *
- * definition = name, [ '(', [ name, { ',', name } ], ')' ], '=', expression;
+ * definition = word, [ '(', [ word, { ',', word } ], ')' ], '=', expression;
  *
- * program = { definition };
+ * program = { definition | definition call };
  */
 
 static std::vector<std::unique_ptr<Node>> allocated_nodes;
 
-Node* createNode(node_k nkind)
+Node* create_node(node_k nkind)
 {
-	Node *newNode = new Node;
-	newNode->kind = nkind;
-	allocated_nodes.push_back(std::unique_ptr<Node>(newNode));
-	return newNode;
+	Node *new_node = new Node;
+	new_node->kind = nkind;
+	allocated_nodes.push_back(std::unique_ptr<Node>(new_node));
+	return new_node;
 }
 
 Parser::Parser()
@@ -38,17 +40,17 @@ void Parser::nextToken()
 
 Node* Parser::parseExpression()
 {
-	Node *exprNode = createNode(NODE_EXPERESSION);
+	Node *exprNode = create_node(NODE_EXPERESSION);
 
 	if (_current->kind == TOKEN_INTEGER) {
-		Node *constNode = createNode(NODE_CONSTANT);
+		Node *constNode = create_node(NODE_CONSTANT);
 		constNode->constValue = _current->integer;
 		exprNode->next.push_back(constNode);
 	} else if (_current->kind == TOKEN_WORD) {
 		const std::string definedName = _current->word;
 		nextToken();
 		if (_current->kind == TOKEN_OPENING_PAREN) {
-			Node *funcCall = createNode(NODE_DEFINITION_CALL);
+			Node *funcCall = create_node(NODE_DEFINITION_CALL);
 			funcCall->definitonName = definedName;
 			nextToken();
 			while (1) {
@@ -64,7 +66,7 @@ Node* Parser::parseExpression()
 			}
 			exprNode->next.push_back(funcCall);
 		} else {
-			Node *varFetch = createNode(NODE_DEFINITION_CALL);
+			Node *varFetch = create_node(NODE_DEFINITION_CALL);
 			varFetch->definitonName = definedName;
 			exprNode->next.push_back(varFetch);
 		}
@@ -86,13 +88,13 @@ Node* Parser::parseDefinition()
 
 	switch (_current->kind) {
 		case TOKEN_EQUALS:
-			definitionNode = createNode(NODE_DEFINITION);
+			definitionNode = create_node(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
 			nextToken();
 			definitionNode->next.push_back(parseExpression());
 			break;
 		case TOKEN_OPENING_PAREN:
-			definitionNode = createNode(NODE_DEFINITION);
+			definitionNode = create_node(NODE_DEFINITION);
 			definitionNode->definitonName = definedName;
 			nextToken();
 			if (_current->kind != TOKEN_CLOSING_PAREN)
