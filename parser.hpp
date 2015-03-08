@@ -10,7 +10,7 @@ enum node_k {
 	NODE_CONSTANT,
 	NODE_WORD,
 	NODE_FUNCION_CALL,
-	NODE_EXPERESSION,
+	NODE_EXPRESSION,
 	NODE_FUNCTION_DEFINITION,
 	NODE_STUB
 };
@@ -18,11 +18,11 @@ enum node_k {
 struct Node {
 	node_k kind;
 
-	int constant_digit;
+	int constant_number;
 
 	std::string word_word;
 
-	std::string function_call_name;
+	Node *function_call_function;
 	Node *function_call_argument;
 
 	std::string function_definition_name;
@@ -40,6 +40,8 @@ class Parser
 
 	void next_token();
 	Node* parse_definition();
+	Node* parse_expression();
+	Node* parse_function_call();
 public:
 	Parser();
 	Node Parse(const std::vector<token> &ntokens);

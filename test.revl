@@ -1,4 +1,4 @@
-add (x,y) = ((plus x) y)
 inc (x) = ((plus x) 1)
 id(x) = (x)
+add (x,y) = ((plus x) y)
 main = plus(1, 2)

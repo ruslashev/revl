@@ -9,13 +9,13 @@
  * word = alpha, { alpha } ;
  *
  * constant = integer | function_call ;
- * function_call = '(', word, [ expression ], ')'
+ * function_call = '(', word, [ expression ], ')' ;
  *
- * expression = function_call | constant | word ;
+ * expression = constant | word | function_call ;
  *
- * function_definition = word, word, [ { ',', word } ], '=', expression
+ * function_definition = word, word, [ { ',', word } ], '=', expression ;
  *
- * program = { function_definition };
+ * program = { function_definition } ;
  */
 
 static std::vector<std::unique_ptr<Node>> allocated_nodes;
@@ -44,51 +44,53 @@ void Parser::next_token()
 		error("Unexpected program termination");
 }
 
-#if 0
-Node* Parser::parseExpression()
-{
-	Node *exprNode = create_node(NODE_EXPERESSION);
+Node* Parser::parse_function_call()
+{ // expects TOKEN_OPENING_PAREN as a current token
+	Node *node = create_node(NODE_FUNCION_CALL);
+
+	next_token();
+
+	node->next.push_back(parse_expression());
+	node->function_call_function = node->next[0];
+
+	next_token();
+
+	if (_current->kind == TOKEN_CLOSING_PAREN) {
+		node->next.push_back(NULL);
+	} else
+		node->next.push_back(parse_expression());
+
+	node->function_call_argument = node->next[1];
+
+	next_token();
+
+	return node;
+}
+
+Node* Parser::parse_expression()
+{ // expects TOKEN_INTEGER, TOKEN_WORD or TOKEN_OPENING_PAREN as current token
+	Node *node = create_node(NODE_EXPRESSION);
 
 	if (_current->kind == TOKEN_INTEGER) {
-		Node *constNode = create_node(NODE_CONSTANT);
-		constNode->constValue = _current->integer;
-		exprNode->next.push_back(constNode);
+		Node *node_const = create_node(NODE_CONSTANT);
+		node_const->constant_number = _current->integer;
+		node->next.push_back(node_const);
 	} else if (_current->kind == TOKEN_WORD) {
-		const std::string definedName = _current->word;
-		nextToken();
-		if (_current->kind == TOKEN_OPENING_PAREN) {
-			Node *funcCall = create_node(NODE_DEFINITION_CALL);
-			funcCall->definitonName = definedName;
-			nextToken();
-			while (1) {
-				if (_current->kind == TOKEN_CLOSING_PAREN)
-					break;
-				funcCall->next.push_back(parseExpression());
-				if (_current->kind == TOKEN_CLOSING_PAREN)
-					break;
-				if (_current->kind != TOKEN_COMMA)
-					error("Failed to parse arguments for call of function \"%s\"",
-							definedName.c_str());
-				nextToken();
-			}
-			exprNode->next.push_back(funcCall);
-		} else {
-			Node *varFetch = create_node(NODE_DEFINITION_CALL);
-			varFetch->definitonName = definedName;
-			exprNode->next.push_back(varFetch);
-		}
+		Node *node_word = create_node(NODE_WORD);
+		node_word->word_word = _current->word;
+		node->next.push_back(node_word);
+	} else if (_current->kind == TOKEN_OPENING_PAREN) {
+		node->next.push_back(parse_function_call());
 	} else {
 		printf("Error: unknown expression: ");
 		_current->print();
 	}
 
-	nextToken();
-	return exprNode;
+	return node;
 }
-#endif
 
 Node* Parser::parse_definition()
-{
+{ // expects TOKEN_WORD as a current token
 	Node *node = create_node(NODE_FUNCTION_DEFINITION);
 	node->function_definition_name = _current->word;
 
@@ -118,9 +120,10 @@ Node* Parser::parse_definition()
 		}
 	}
 
-	if (_current->kind == TOKEN_EQUALS)
-		node->next.push_back(create_node(NODE_STUB));
-	else
+	if (_current->kind == TOKEN_EQUALS) {
+		next_token();
+		node->next.push_back(parse_expression());
+	} else
 		error("Error: expected '=' in function definition for \"%s\"",
 				node->function_definition_name.c_str());
 
@@ -173,13 +176,13 @@ void Node::PrintType()
 	if (kind == NODE_PROGRAM) {
 		printf("PROGRAM");
 	} else if (kind == NODE_CONSTANT) {
-		printf("CONSTANT");
+		printf("CONSTANT %d", constant_number);
 	} else if (kind == NODE_WORD) {
-		printf("WORD");
+		printf("WORD %s", word_word.c_str());
 	} else if (kind == NODE_FUNCION_CALL) {
 		printf("FUNCION_CALL");
-	} else if (kind == NODE_EXPERESSION) {
-		printf("EXPERESSION");
+	} else if (kind == NODE_EXPRESSION) {
+		printf("EXPRESSION");
 	} else if (kind == NODE_FUNCTION_DEFINITION) {
 		printf("FUNCTION_DEFINITION %s ", function_definition_name.c_str());
 		if (function_definition_arguments.size() == 0)
