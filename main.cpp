@@ -25,9 +25,9 @@ int main()
 	root.Print(0);
 	puts("Finished parsing.");
 
-	puts("4. Evaluating...");
-	int result = evaluator_evaluate(root);
-	printf("Finished evaluating. Result = %d\n", result);
+	// puts("4. Evaluating...");
+	// int result = evaluator_evaluate(root);
+	// printf("Finished evaluating. Result = %d\n", result);
 
 	return 0;
 }

@@ -1,6 +1,8 @@
 #include "evaluator.hpp"
 #include "utils.hpp"
 
+#if 0
+
 int result = 0;
 int evaluateExpression(Node *tree);
 int evaluateDefinition(Node *tree);
@@ -77,4 +79,6 @@ int evaluator_evaluate(Node tree)
 			break;
 	}
 }
+
+#endif
 

@@ -7,14 +7,15 @@
  *
  * integer = digit, { digit };
  * word = alpha, { alpha } ;
- * constant = integer
  *
- * definition call = word, [ '(', [ expression, { ',', expression } ], ')' ]
- * expression = constant | definition call;
+ * constant = integer | function_call ;
+ * function_call = '(', word, [ expression ], ')'
  *
- * definition = word, [ '(', [ word, { ',', word } ], ')' ], '=', expression;
+ * expression = function_call | constant | word ;
  *
- * program = { definition | definition call };
+ * function_definition = word, word, [ { ',', word } ], '=', expression
+ *
+ * program = { function_definition };
  */
 
 static std::vector<std::unique_ptr<Node>> allocated_nodes;
@@ -23,6 +24,9 @@ Node* create_node(node_k nkind)
 {
 	Node *new_node = new Node;
 	new_node->kind = nkind;
+
+	new_node->function_call_argument = NULL;
+
 	allocated_nodes.push_back(std::unique_ptr<Node>(new_node));
 	return new_node;
 }
@@ -32,12 +36,15 @@ Parser::Parser()
 	_current = NULL;
 }
 
-void Parser::nextToken()
+void Parser::next_token()
 {
 	if (_current->kind != TOKEN_EOF)
 		_current++;
+	else
+		error("Unexpected program termination");
 }
 
+#if 0
 Node* Parser::parseExpression()
 {
 	Node *exprNode = create_node(NODE_EXPERESSION);
@@ -78,71 +85,66 @@ Node* Parser::parseExpression()
 	nextToken();
 	return exprNode;
 }
+#endif
 
-Node* Parser::parseDefinition()
+Node* Parser::parse_definition()
 {
-	const std::string definedName = _current->word;
-	Node *definitionNode = NULL;
+	Node *node = create_node(NODE_FUNCTION_DEFINITION);
+	node->function_definition_name = _current->word;
 
-	nextToken();
+	next_token();
 
-	switch (_current->kind) {
-		case TOKEN_EQUALS:
-			definitionNode = create_node(NODE_DEFINITION);
-			definitionNode->definitonName = definedName;
-			nextToken();
-			definitionNode->next.push_back(parseExpression());
-			break;
-		case TOKEN_OPENING_PAREN:
-			definitionNode = create_node(NODE_DEFINITION);
-			definitionNode->definitonName = definedName;
-			nextToken();
-			if (_current->kind != TOKEN_CLOSING_PAREN)
+	if (_current->kind == TOKEN_OPENING_PAREN) {
+		next_token();
+		if (_current->kind == TOKEN_CLOSING_PAREN)
+			next_token();
+		else {
 			while (1) {
 				if (_current->kind != TOKEN_WORD)
-					error("Error: expected variable in definition for function \"%s\"",
-							definedName.c_str());
-				definitionNode->definitionArgList.push_back(_current->word);
-				nextToken();
-				if (_current->kind == TOKEN_CLOSING_PAREN)
+					error("Error: expected variable in definition for function "
+							"\"%s\"", node->function_definition_name.c_str());
+				node->function_definition_arguments.push_back(_current->word);
+				next_token();
+				if (_current->kind == TOKEN_CLOSING_PAREN) {
+					next_token();
 					break;
-				if (_current->kind != TOKEN_COMMA)
-					error("Error: variables in function definition must be separated "
-							"by commas.");
-				nextToken();
+				} else if (_current->kind == TOKEN_COMMA) {
+					next_token();
+					continue;
+				} else
+					error("Error: variables in function definition must be "
+							"separated by commas.");
 			}
-			nextToken();
-			if (_current->kind != TOKEN_EQUALS)
-				error("Error: expected '=' in function definition for \"%s\"",
-						definedName.c_str());
-			nextToken();
-			definitionNode->next.push_back(parseExpression());
-			break;
-		default:
-			error("Error: expected a sane definiton");
-	}
-
-	return definitionNode;
-}
-
-Node Parser::Parse(std::vector<token> ntokens)
-{
-	std::vector<token> tokens = ntokens;
-	Node root;
-	root.kind = NODE_ROOT;
-	_current = &tokens.front();
-	while (_current->kind != TOKEN_EOF) {
-		switch (_current->kind) {
-			case TOKEN_WORD:
-				root.next.push_back(parseDefinition());
-				break;
-			default:
-				printf("Error: ");
-				_current->print();
-				goto end;
 		}
 	}
-end:
+
+	if (_current->kind == TOKEN_EQUALS)
+		node->next.push_back(create_node(NODE_STUB));
+	else
+		error("Error: expected '=' in function definition for \"%s\"",
+				node->function_definition_name.c_str());
+
+	return node;
+}
+
+Node Parser::Parse(const std::vector<token> &ntokens)
+{
+	std::vector<token> tokens = ntokens;
+
+	Node root;
+	root.kind = NODE_PROGRAM;
+
+	_current = &tokens.front();
+
+	while (_current->kind != TOKEN_EOF) {
+		if (_current->kind == TOKEN_WORD)
+			root.next.push_back(parse_definition());
+		else {
+			break;
+			error("Unexpected top level token, expected word");
+		}
+	}
+
 	return root;
 }
 
@@ -158,9 +160,8 @@ void Node::Print(int indent)
 		printf("\n");
 	} else {
 		printf(" --> (\n");
-		for (auto &n : next) {
+		for (auto &n : next)
 			n->Print(indent+1);
-		}
 		for (int i = 0; i < indent; i++)
 			printf("\t");
 		printf(")\n");
@@ -169,22 +170,31 @@ void Node::Print(int indent)
 
 void Node::PrintType()
 {
-	if (kind == NODE_DEFINITION) {
-		printf("NODE_DEFINITION \"%s\" (", definitonName.c_str());
-		if (definitionArgList.size() == 0)
-			printf("no variables)");
+	if (kind == NODE_PROGRAM) {
+		printf("PROGRAM");
+	} else if (kind == NODE_CONSTANT) {
+		printf("CONSTANT");
+	} else if (kind == NODE_WORD) {
+		printf("WORD");
+	} else if (kind == NODE_FUNCION_CALL) {
+		printf("FUNCION_CALL");
+	} else if (kind == NODE_EXPERESSION) {
+		printf("EXPERESSION");
+	} else if (kind == NODE_FUNCTION_DEFINITION) {
+		printf("FUNCTION_DEFINITION %s ", function_definition_name.c_str());
+		if (function_definition_arguments.size() == 0)
+			printf("(no arguments)");
 		else {
-			for (int i = 0; i < definitionArgList.size()-1; i++)
-				printf("\"%s\", ", definitionArgList[i].c_str());
-			printf("\"%s\") ", definitionArgList.back().c_str());
+			std::vector<std::string> init = function_definition_arguments;
+			init.pop_back();
+			std::string last = function_definition_arguments.back();
+			printf("(");
+			for (auto &arg : init)
+				printf("%s, ", arg.c_str());
+			printf("%s)", last.c_str());
 		}
-	} else if (kind == NODE_CONSTANT)
-		printf("NODE_CONSTANT %d", constValue);
-	else if (kind == NODE_ROOT)
-		printf("NODE_ROOT");
-	else if (kind == NODE_EXPERESSION)
-		printf("NODE_EXPERESSION");
-	else if (kind == NODE_DEFINITION_CALL)
-		printf("NODE_DEFINITION_CALL \"%s\"", definitonName.c_str());
+	} else if (kind == NODE_STUB) {
+		printf("STUB");
+	}
 }
 
