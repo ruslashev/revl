@@ -55,7 +55,9 @@ std::vector<token> Lexer::Lex(std::string nfile)
 
 	std::vector<token> _tokens;
 	int i = 0;
+	int line = 1, column = 0;
 	char ch = file[i++];
+	column++;
 
 	while (i < file.length()) {
 		std::string word_buf = "";
@@ -64,19 +66,25 @@ std::vector<token> Lexer::Lex(std::string nfile)
 		while (_is_alpha(ch)) {
 			word_buf += ch;
 			ch = file[i++];
+			column++;
 		}
 		while (_is_digit(ch)) {
 			integer_buf += ch;
 			ch = file[i++];
+			column++;
 		}
 		if (word_buf != "") {
 			token new_token { TOKEN_WORD };
 			new_token.word = word_buf;
+			new_token.line = line;
+			new_token.column = column;
 			_tokens.push_back(new_token);
 			continue;
 		} else if (integer_buf != "") {
 			token new_token { TOKEN_INTEGER };
 			new_token.integer = std::stoi(integer_buf);
+			new_token.line = line;
+			new_token.column = column;
 			_tokens.push_back(new_token);
 			continue;
 		}
@@ -89,20 +97,28 @@ std::vector<token> Lexer::Lex(std::string nfile)
 				case '=': new_token.kind = TOKEN_EQUALS; break;
 				case ',': new_token.kind = TOKEN_COMMA; break;
 			}
+			new_token.line = line;
+			new_token.column = column;
 			_tokens.push_back(new_token);
 		}
 
+		if (ch == '\n') {
+			column = 0;
+			line++;
+		}
+
 		ch = file[i++];
+		column++;
 	}
 
 	_tokens.push_back(token { TOKEN_EOF });
 
-	checkParens(_tokens);
+	check_parentheses(_tokens);
 
 	return _tokens;
 }
 
-void Lexer::checkParens(std::vector<token> _tokens)
+void Lexer::check_parentheses(std::vector<token> _tokens)
 {
 	int balance = 0;
 

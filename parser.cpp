@@ -227,12 +227,13 @@ Node Parser::Parse(const std::vector<token> &ntokens)
 
 void Parser::error(const char *format, ...)
 {
-	fprintf(stderr, "Parser error @ (%d:%d): %s\n");
-	va_list list;
-	va_start(list, format);
-	vfprintf(stderr, format, list);
-	va_end(list);
-	fprintf(stderr, "\n");
+	char buffer[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buffer, 256, format, args);
+	printf("Parser error @ (%d:%d):\n%s\n",
+			_current->line, _current->column, buffer);
+	va_end(args);
 	exit(1);
 }
 
