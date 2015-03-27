@@ -166,27 +166,30 @@ Node* Parser::parse_function_definition()
 
 	next_token();
 
-	if (_current->kind == TOKEN_OPENING_PAREN) {
-		next_token();
-		if (_current->kind == TOKEN_CLOSING_PAREN)
-			error("Function definitions without arguments are not permitted.\nRemove parentheses to make \"%s\" a constant, which you probably meant to do");
+	if (_current->kind != TOKEN_OPENING_PAREN)
+		error("that should not happen");
 
-		while (1) {
-			if (_current->kind != TOKEN_WORD)
-				error("Error: expected variable in definition for function "
-						"\"%s\"", node->function_definition_name.c_str());
-			node->function_definition_arguments.push_back(_current->word);
+	next_token();
+	if (_current->kind == TOKEN_CLOSING_PAREN)
+		error("Function definitions without arguments are not permitted.\n"
+				"Remove parentheses to make \"%s\" a constant, which you "
+				"probably meant to do.", node->function_definition_name.c_str());
+
+	while (1) {
+		if (_current->kind != TOKEN_WORD)
+			error("Error: expected variable in definition for function "
+					"\"%s\"", node->function_definition_name.c_str());
+		node->function_definition_arguments.push_back(_current->word);
+		next_token();
+		if (_current->kind == TOKEN_CLOSING_PAREN) {
 			next_token();
-			if (_current->kind == TOKEN_CLOSING_PAREN) {
-				next_token();
-				break;
-			} else if (_current->kind == TOKEN_COMMA) {
-				next_token();
-				continue;
-			} else
-				error("Error: variables in function definition must be "
-						"separated by commas.");
-		}
+			break;
+		} else if (_current->kind == TOKEN_COMMA) {
+			next_token();
+			continue;
+		} else
+			error("Error: variables in function definition must be "
+					"separated by commas.");
 	}
 
 	if (_current->kind != TOKEN_EQUALS)
@@ -216,8 +219,6 @@ Node Parser::Parse(const std::vector<token> &ntokens)
 			else
 				root.next.push_back(parse_constant_definition());
 		} else {
-			_current->print();
-			break;
 			error("Unexpected top level token, expected word");
 		}
 	}

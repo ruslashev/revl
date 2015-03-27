@@ -1,8 +1,6 @@
 inc (x) = ((plus x) 1)
-what(x) = (x)
 dude(yeh) = 420
 id(x) = x
 add (x,y) = ((plus x) y)
 constant = (inc 2)
-main = plus(1, 2)
-error() = (not permitted)
+main = ((plus x) y)
