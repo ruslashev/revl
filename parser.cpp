@@ -1,5 +1,4 @@
 #include "parser.hpp"
-#include "utils.hpp"
 
 /* alpha  = 'A' .. 'Z' | 'a' .. 'z' ;
  * punct = '(' | ')' | '=' | ',' ;
@@ -13,10 +12,59 @@
  *
  * expression = constant | word | function_call ;
  *
- * function_definition = word, word, [ { ',', word } ], '=', expression ;
+ * constant_definition = word, '=', expression ;
+ * function_definition = word, '(', word, { word }, ')', '=', expression ;
  *
- * program = { function_definition } ;
+ * program = { function_definition | constant_definition } ;
  */
+
+void Node::PrintType()
+{
+	if (kind == NODE_PROGRAM) {
+		printf("PROGRAM");
+	} else if (kind == NODE_CONSTANT) {
+		printf("CONSTANT %d", constant_number);
+	} else if (kind == NODE_WORD) {
+		printf("WORD %s", word_word.c_str());
+	} else if (kind == NODE_FUNCTION_CALL) {
+		printf("FUNCTION_CALL");
+	} else if (kind == NODE_EXPRESSION) {
+		printf("EXPRESSION");
+	} else if (kind == NODE_FUNCTION_DEFINITION) {
+		printf("FUNCTION_DEFINITION %s", function_definition_name.c_str());
+		std::vector<std::string> init = function_definition_arguments;
+		init.pop_back();
+		std::string last = function_definition_arguments.back();
+		printf("(");
+		for (auto &arg : init)
+			printf("%s, ", arg.c_str());
+		printf("%s)", last.c_str());
+	} else if (kind == NODE_CONSTANT_DEFINITION) {
+		printf("CONSTANT_DEFINITION %s", constant_definition_name.c_str());
+	} else if (kind == NODE_STUB) {
+		printf("STUB");
+	}
+}
+
+void Node::Print(int indent)
+{
+	for (int i = 0; i < indent; i++)
+		printf("\t");
+	printf("Node ");
+
+	PrintType();
+
+	if (next.size() == 0) {
+		printf("\n");
+	} else {
+		printf(" --> (\n");
+		for (auto &n : next)
+			n->Print(indent+1);
+		for (int i = 0; i < indent; i++)
+			printf("\t");
+		printf(")\n");
+	}
+}
 
 static std::vector<std::unique_ptr<Node>> allocated_nodes;
 
@@ -24,9 +72,6 @@ Node* create_node(node_k nkind)
 {
 	Node *new_node = new Node;
 	new_node->kind = nkind;
-
-	new_node->function_call_argument = NULL;
-
 	allocated_nodes.push_back(std::unique_ptr<Node>(new_node));
 	return new_node;
 }
@@ -44,25 +89,30 @@ void Parser::next_token()
 		error("Unexpected program termination");
 }
 
+token* Parser::peek_next_token()
+{
+	if (_current->kind == TOKEN_EOF)
+		error("Unexpected program termination (peek)");
+
+	return (_current+1);
+}
+
 Node* Parser::parse_function_call()
 { // expects TOKEN_OPENING_PAREN as a current token
-	Node *node = create_node(NODE_FUNCION_CALL);
+	Node *node = create_node(NODE_FUNCTION_CALL);
 
 	next_token();
 
 	node->next.push_back(parse_expression());
 	node->function_call_function = node->next[0];
 
-	next_token();
+	if (_current->kind == TOKEN_CLOSING_PAREN)
+		error("Opening parenthesis implies a function call.\n"
+				"Function calls are required to take one argument.");
 
-	if (_current->kind == TOKEN_CLOSING_PAREN) {
-		node->next.push_back(NULL);
-	} else
-		node->next.push_back(parse_expression());
+	node->next.push_back(parse_expression());
 
 	node->function_call_argument = node->next[1];
-
-	next_token();
 
 	return node;
 }
@@ -86,10 +136,30 @@ Node* Parser::parse_expression()
 		_current->print();
 	}
 
+	next_token();
+
 	return node;
 }
 
-Node* Parser::parse_definition()
+Node* Parser::parse_constant_definition()
+{ // expects TOKEN_WORD as a current token
+	Node *node = create_node(NODE_CONSTANT_DEFINITION);
+	node->constant_definition_name = _current->word;
+
+	next_token();
+
+	if (_current->kind != TOKEN_EQUALS) {
+		error("Error: expected '=' in constant definition for \"%s\"",
+				node->constant_definition_name.c_str());
+	} else {
+		next_token();
+		node->next.push_back(parse_expression());
+	}
+
+	return node;
+}
+
+Node* Parser::parse_function_definition()
 { // expects TOKEN_WORD as a current token
 	Node *node = create_node(NODE_FUNCTION_DEFINITION);
 	node->function_definition_name = _current->word;
@@ -99,33 +169,32 @@ Node* Parser::parse_definition()
 	if (_current->kind == TOKEN_OPENING_PAREN) {
 		next_token();
 		if (_current->kind == TOKEN_CLOSING_PAREN)
+			error("Function definitions without arguments are not permitted.\nRemove parentheses to make \"%s\" a constant, which you probably meant to do");
+
+		while (1) {
+			if (_current->kind != TOKEN_WORD)
+				error("Error: expected variable in definition for function "
+						"\"%s\"", node->function_definition_name.c_str());
+			node->function_definition_arguments.push_back(_current->word);
 			next_token();
-		else {
-			while (1) {
-				if (_current->kind != TOKEN_WORD)
-					error("Error: expected variable in definition for function "
-							"\"%s\"", node->function_definition_name.c_str());
-				node->function_definition_arguments.push_back(_current->word);
+			if (_current->kind == TOKEN_CLOSING_PAREN) {
 				next_token();
-				if (_current->kind == TOKEN_CLOSING_PAREN) {
-					next_token();
-					break;
-				} else if (_current->kind == TOKEN_COMMA) {
-					next_token();
-					continue;
-				} else
-					error("Error: variables in function definition must be "
-							"separated by commas.");
-			}
+				break;
+			} else if (_current->kind == TOKEN_COMMA) {
+				next_token();
+				continue;
+			} else
+				error("Error: variables in function definition must be "
+						"separated by commas.");
 		}
 	}
 
-	if (_current->kind == TOKEN_EQUALS) {
-		next_token();
-		node->next.push_back(parse_expression());
-	} else
+	if (_current->kind != TOKEN_EQUALS)
 		error("Error: expected '=' in function definition for \"%s\"",
 				node->function_definition_name.c_str());
+
+	next_token();
+	node->next.push_back(parse_expression());
 
 	return node;
 }
@@ -140,9 +209,14 @@ Node Parser::Parse(const std::vector<token> &ntokens)
 	_current = &tokens.front();
 
 	while (_current->kind != TOKEN_EOF) {
-		if (_current->kind == TOKEN_WORD)
-			root.next.push_back(parse_definition());
-		else {
+		if (_current->kind == TOKEN_WORD) {
+			std::string definition_name = _current->word;
+			if (peek_next_token()->kind == TOKEN_OPENING_PAREN)
+				root.next.push_back(parse_function_definition());
+			else
+				root.next.push_back(parse_constant_definition());
+		} else {
+			_current->print();
 			break;
 			error("Unexpected top level token, expected word");
 		}
@@ -151,53 +225,14 @@ Node Parser::Parse(const std::vector<token> &ntokens)
 	return root;
 }
 
-void Node::Print(int indent)
+void Parser::error(const char *format, ...)
 {
-	for (int i = 0; i < indent; i++)
-		printf("\t");
-	printf("Node ");
-
-	PrintType();
-
-	if (next.size() == 0) {
-		printf("\n");
-	} else {
-		printf(" --> (\n");
-		for (auto &n : next)
-			n->Print(indent+1);
-		for (int i = 0; i < indent; i++)
-			printf("\t");
-		printf(")\n");
-	}
-}
-
-void Node::PrintType()
-{
-	if (kind == NODE_PROGRAM) {
-		printf("PROGRAM");
-	} else if (kind == NODE_CONSTANT) {
-		printf("CONSTANT %d", constant_number);
-	} else if (kind == NODE_WORD) {
-		printf("WORD %s", word_word.c_str());
-	} else if (kind == NODE_FUNCION_CALL) {
-		printf("FUNCION_CALL");
-	} else if (kind == NODE_EXPRESSION) {
-		printf("EXPRESSION");
-	} else if (kind == NODE_FUNCTION_DEFINITION) {
-		printf("FUNCTION_DEFINITION %s ", function_definition_name.c_str());
-		if (function_definition_arguments.size() == 0)
-			printf("(no arguments)");
-		else {
-			std::vector<std::string> init = function_definition_arguments;
-			init.pop_back();
-			std::string last = function_definition_arguments.back();
-			printf("(");
-			for (auto &arg : init)
-				printf("%s, ", arg.c_str());
-			printf("%s)", last.c_str());
-		}
-	} else if (kind == NODE_STUB) {
-		printf("STUB");
-	}
+	fprintf(stderr, "Parser error @ (%d:%d): %s\n");
+	va_list list;
+	va_start(list, format);
+	vfprintf(stderr, format, list);
+	va_end(list);
+	fprintf(stderr, "\n");
+	exit(1);
 }
 

@@ -1,4 +1,7 @@
 inc (x) = ((plus x) 1)
-id(x) = (x)
+what(x) = (x)
+id(x) = x
 add (x,y) = ((plus x) y)
+constant = (inc 2)
 main = plus(1, 2)
+error() = (not permitted)
