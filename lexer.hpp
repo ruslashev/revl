@@ -19,6 +19,8 @@ struct token {
 	std::string word;
 	int integer;
 
+	int line, column;
+
 	void print();
 };
 
@@ -30,7 +32,7 @@ class Lexer
 	bool _is_digit(char ch);
 	bool _is_punct(char ch);
 
-	void checkParens(std::vector<token> _tokens);
+	void check_parentheses(std::vector<token> _tokens);
 public:
 	std::vector<token> Lex(std::string nfile);
 };

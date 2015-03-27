@@ -1,3 +1,4 @@
+what(abc) = 228
 inc (x) = ((plus x) 1)
 id(x) = (x)
 add (x,y) = ((plus x) y)

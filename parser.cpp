@@ -18,6 +18,18 @@
  * program = { function_definition } ;
  */
 
+void parser_error(token *current, const char *format, ...)
+{
+	char buffer[256];
+	va_list args;
+	va_start(args, format);
+	vsnprintf(buffer, 256, format, args);
+	printf("Parser error (%d:%d): %s\n",
+			current->line, current->column, buffer);
+	va_end(args);
+	exit(1);
+}
+
 static std::vector<std::unique_ptr<Node>> allocated_nodes;
 
 Node* create_node(node_k nkind)
@@ -38,10 +50,12 @@ Parser::Parser()
 
 void Parser::next_token()
 {
-	if (_current->kind != TOKEN_EOF)
+	if (_current->kind != TOKEN_EOF) {
 		_current++;
-	else
-		error("Unexpected program termination");
+		printf("Current token: ");
+		_current->print();
+	} else
+		parser_error(_current, "Unexpected program termination");
 }
 
 Node* Parser::parse_function_call()
@@ -62,7 +76,8 @@ Node* Parser::parse_function_call()
 
 	node->function_call_argument = node->next[1];
 
-	next_token();
+	if (_current->kind != TOKEN_CLOSING_PAREN)
+		parser_error(_current, "Expected terminating closing paren in funcion call");
 
 	return node;
 }
@@ -86,6 +101,8 @@ Node* Parser::parse_expression()
 		_current->print();
 	}
 
+	next_token();
+
 	return node;
 }
 
@@ -103,7 +120,7 @@ Node* Parser::parse_definition()
 		else {
 			while (1) {
 				if (_current->kind != TOKEN_WORD)
-					error("Error: expected variable in definition for function "
+					parser_error(_current, "expected variable in definition for function "
 							"\"%s\"", node->function_definition_name.c_str());
 				node->function_definition_arguments.push_back(_current->word);
 				next_token();
@@ -114,7 +131,7 @@ Node* Parser::parse_definition()
 					next_token();
 					continue;
 				} else
-					error("Error: variables in function definition must be "
+					parser_error(_current, "variables in function definition must be "
 							"separated by commas.");
 			}
 		}
@@ -124,7 +141,7 @@ Node* Parser::parse_definition()
 		next_token();
 		node->next.push_back(parse_expression());
 	} else
-		error("Error: expected '=' in function definition for \"%s\"",
+		parser_error(_current, "expected '=' in function definition for \"%s\"",
 				node->function_definition_name.c_str());
 
 	return node;
@@ -143,8 +160,7 @@ Node Parser::Parse(const std::vector<token> &ntokens)
 		if (_current->kind == TOKEN_WORD)
 			root.next.push_back(parse_definition());
 		else {
-			break;
-			error("Unexpected top level token, expected word");
+			parser_error(_current, "Unexpected top level token type %d, expected word", _current->kind);
 		}
 	}
 
