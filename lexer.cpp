@@ -63,6 +63,16 @@ std::vector<token> Lexer::Lex(std::string nfile)
 		std::string word_buf = "";
 		std::string integer_buf = "";
 
+		if (ch == '#') {
+			while (ch != '\n')
+				ch = file[i++];
+		}
+
+		if (ch == '\n') {
+			column = 0;
+			line++;
+		}
+
 		while (_is_alpha(ch)) {
 			word_buf += ch;
 			ch = file[i++];
@@ -100,11 +110,6 @@ std::vector<token> Lexer::Lex(std::string nfile)
 			new_token.line = line;
 			new_token.column = column;
 			_tokens.push_back(new_token);
-		}
-
-		if (ch == '\n') {
-			column = 0;
-			line++;
 		}
 
 		ch = file[i++];

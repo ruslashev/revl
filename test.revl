@@ -3,4 +3,5 @@ dude(yeh) = 420
 id(x) = x
 add (x,y) = ((plus x) y)
 constant = (inc 2)
-main = ((plus x) y)
+map (function,list) = whoa # hold on
+main(argc,argv) = ((plus x) y)
