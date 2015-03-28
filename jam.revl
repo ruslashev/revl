@@ -1,0 +1,22 @@
+main (args) =
+  let newlist = ((map inc) args)
+    (print newlist)
+    
+    concat (1st-str,str_2,num) ::
+      1st-str,str_2 elem String,
+        num memb Integer,OtherCategory
+        
+        inc (x) :: x member Number =
+          = ((plus x) 1)
+          
+          inc (str) :: str member String
+            = (toStr (inc (toNum str)))
+            
+            # Lists are homogeneous,
+            # Sets are not.
+            # Tuples are like tuples in Haskell
+            print (list) :: list - list of Base =
+              let head = (head list),
+                  rest = (init list)
+                    (conc [(toStr head), newline, (print list)])
+                    
