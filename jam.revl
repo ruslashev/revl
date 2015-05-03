@@ -2,14 +2,12 @@ main (args) =
   let newlist = ((map inc) args)
   (print newlist)
 
-concat (1st-str,str_2,num) ::
-  1st-str,str_2 elem String,
-  num memb Integer,OtherCategory
+concat (1st-str,str_2 <- String, num <- Integer^OtherCategory)
 
-inc (x) :: x member Number =
+inc (x) :: x <- Number =
   = ((plus x) 1)
 
-inc (str) :: str member String
+inc (str <- String)
   = (toStr (inc (toNum str)))
 
 # Lists are homogeneous,
