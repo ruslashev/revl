@@ -1,4 +1,7 @@
-# mentioning
+# types are written like this:
+# a variable is an element of the set of types, like here
+# args is in set of Arrays and Strings.
+# `in` seems to be a better syntax than `<-`
 main (args in Array^String) =
   let newlist = ((map inc) args)
   (print newlist)
